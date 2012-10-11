@@ -6,10 +6,9 @@ require 'debugger'
 
 @db = SQLite3::Database.open('flatiron.db')
 
-def insert_student(name, tagline, bio) 
-	statement = "INSERT INTO students (name, tagline, bio)
-	VALUES (\"#{name}\",\"#{tagline}\", \"#{bio}\")"
-	puts statement
+def insert_student(name, tagline, bio, photo) 
+	statement = "INSERT INTO students (name, tagline, bio, photo)
+	VALUES (\"#{name}\",\"#{tagline}\", \"#{bio}\", \"#{photo}\")"
 	@db.execute(statement)
 end
 def find_id(name)
@@ -48,6 +47,8 @@ links = index_page.css("div.one_third a").map { |link| link["href"] }
 # billy's profile doesnt match
 links.delete("billymizrahi.html")
 
+all_css = Nokogiri::HTML(open("http://students.flatironschool.com/css/matz.css"))   
+
 links.each do |link|
 	student_page = Nokogiri::HTML(open("http://students.flatironschool.com/" << link.to_s)) 
 	name_selector = student_page.css("div.two_third h1")[0]
@@ -59,10 +60,12 @@ links.each do |link|
 	description_selector = student_page.css("div.two_third p:first")[0]
 	description = description_selector.nil? ? "" : escape(description_selector.text)
 
-	puts name
-	puts description
+	photo_class = student_page.css("div#navcontainer div")[0]["class"]
+	my_css = all_css.css("p")[0].text.match(/.#{photo_class}\s*{(\s|.)*?}/)
+	my_css.to_s.match(/\.\.(.*)?\)/)
+
 	# insert student
-	insert_student(name, tagline, description)
+	insert_student(name, tagline, description, $1)
 	students_id = find_id(name)
 
 	# photo is in CSS, can we get this?

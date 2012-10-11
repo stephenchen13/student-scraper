@@ -6,8 +6,8 @@ CREATE TABLE students (
 	id INTEGER PRIMARY KEY,
 	name TEXT,
 	tagline VARCHAR(140),
-	bio TEXT
-
+	bio TEXT,
+	photo TEXT
 );
 
 CREATE TABLE apps (
