@@ -2,12 +2,15 @@ require 'rubygems'
 require 'nokogiri'
 require 'open-uri'
 require 'sqlite3'
+require 'debugger'
 
 @db = SQLite3::Database.open('flatiron.db')
 
 def insert_student(name, tagline, bio) 
-	@db.execute("INSERT INTO students (name, tagline, bio)
-	VALUES ('#{name}','#{tagline}', '#{bio}')")
+	statement = "INSERT INTO students (name, tagline, bio)
+	VALUES (\"#{name}\",\"#{tagline}\", \"#{bio}\")"
+	puts statement
+	@db.execute(statement)
 end
 def find_id(name)
 	array_ids = @db.execute("SELECT id FROM students
@@ -30,12 +33,13 @@ def escape(text)
   text = '' if text.nil?
   text = text.dup
   text = text.to_str
-  text.gsub!("'", "") #\\\\'
-  text.gsub!("\"", '\"')
-  text.gsub!("(", "\\(")
-  text.gsub!(")", "\\)")
+  text.gsub!("'", "''")
+  text.gsub!('"', '""')
   text
 end
+
+# debugger
+
 
 # open index to get all profile links
 index_page = Nokogiri::HTML(open("http://students.flatironschool.com/"))   
@@ -54,6 +58,9 @@ links.each do |link|
 	description_selector = student_page.css("div.two_third p:first")[0]
 	description = description_selector.nil? ? "" : escape(description_selector.text)
 
+puts name
+puts tagline
+puts description
 	# insert student
 	insert_student(name, tagline, description)
 	students_id = find_id(name)
