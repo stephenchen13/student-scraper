@@ -10,8 +10,9 @@ def insert_student(name, tagline, bio)
 	VALUES ('#{name}','#{tagline}', '#{bio}')")
 end
 def find_id(name)
-	@db.execute("SELECT id FROM students
+	array_ids = @db.execute("SELECT id FROM students
 	WHERE students.name = '#{name}'")
+	array_ids[0][0]
 end
 
 def insert_apps(students_id, name, description)
@@ -24,6 +25,18 @@ def insert_social(students_id, name, link)
 		VALUES('#{students_id}', '#{name}', '#{link}')")
 end
 
+
+def escape(text)
+  text = '' if text.nil?
+  text = text.dup
+  text = text.to_str
+  text.gsub!("'", "") #\\\\'
+  text.gsub!("\"", '\"')
+  text.gsub!("(", "\\(")
+  text.gsub!(")", "\\)")
+  text
+end
+
 # open index to get all profile links
 index_page = Nokogiri::HTML(open("http://students.flatironschool.com/"))   
 links = index_page.css("div.one_third a").map { |link| link["href"] }
@@ -33,18 +46,14 @@ links.delete("billymizrahi.html")
 links.each do |link|
 	student_page = Nokogiri::HTML(open("http://students.flatironschool.com/" << link.to_s)) 
 	name_selector = student_page.css("div.two_third h1")[0]
-	name = name_selector.nil? ? "s" : name_selector.text
+	name = name_selector.nil? ? "" : escape(name_selector.text)
 
 	tagline_selector = student_page.css("h2#tagline")[0]
-	tagline = name_selector.nil? ? "s" : tagline_selector.text
+	tagline = name_selector.nil? ? "" : escape(tagline_selector.text)
 
 	description_selector = student_page.css("div.two_third p:first")[0]
-	description = description_selector.nil? ? "s" : description_selector.text
+	description = description_selector.nil? ? "" : escape(description_selector.text)
 
-	puts name
-	puts tagline
-	puts description
-	
 	# insert student
 	insert_student(name, tagline, description)
 	students_id = find_id(name)
@@ -54,7 +63,7 @@ links.each do |link|
 	# image = image_selector["src"]
 
 	email_selector = student_page.css("li.mail a")[0]
-	email = email_selector["href"].gsub("mailto:", "") unless email_selector.nil?
+	email = escape(email_selector["href"].gsub("mailto:", "")) unless email_selector.nil?
 
 	blog_selector = student_page.css("li.blog a")[0]
 	blog = blog_selector["href"] unless blog_selector.nil?
@@ -81,7 +90,8 @@ links.each do |link|
 	apps_selector = student_page.css("div.two_third div.one_third")
 	apps_selector.each do |app_div|
 		app_name = app_div.css("h4").text
-		description = app_div.css("p").text
+		description = escape(app_div.css("p").text)
+		insert_apps(students_id, app_name, description)
 	end
 	# puts blog << " " << linkedin << " " << twitter
 	# puts name << " " << description
