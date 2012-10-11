@@ -35,6 +35,7 @@ def escape(text)
   text = text.to_str
   text.gsub!("'", "''")
   text.gsub!('"', '""')
+  text.strip!
   text
 end
 
@@ -58,9 +59,8 @@ links.each do |link|
 	description_selector = student_page.css("div.two_third p:first")[0]
 	description = description_selector.nil? ? "" : escape(description_selector.text)
 
-puts name
-puts tagline
-puts description
+	puts name
+	puts description
 	# insert student
 	insert_student(name, tagline, description)
 	students_id = find_id(name)
