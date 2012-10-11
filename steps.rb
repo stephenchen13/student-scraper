@@ -3,6 +3,27 @@ require 'nokogiri'
 require 'open-uri'
 require 'sqlite3'
 
+@db = SQLite3::Database.open('flatiron.db')
+
+def insert_student(name, tagline, bio) 
+	@db.execute("INSERT INTO students (name, tagline, bio)
+	VALUES ('#{name}','#{tagline}', '#{bio}')")
+end
+def find_id(name)
+	@db.execute("SELECT id FROM students
+	WHERE students.name = '#{name}'")
+end
+
+def insert_apps(students_id, name, description)
+	@db.execute("INSERT INTO apps(students_id, name, description)
+		VALUES('#{students_id}', '#{name}', '#{description}')")
+end
+
+def insert_social(students_id, name, link)
+	@db.execute("INSERT INTO social(students_id, name, link)
+		VALUES('#{students_id}', '#{name}', '#{link}')")
+end
+
 # open index to get all profile links
 index_page = Nokogiri::HTML(open("http://students.flatironschool.com/"))   
 links = index_page.css("div.one_third a").map { |link| link["href"] }
@@ -12,13 +33,21 @@ links.delete("billymizrahi.html")
 links.each do |link|
 	student_page = Nokogiri::HTML(open("http://students.flatironschool.com/" << link.to_s)) 
 	name_selector = student_page.css("div.two_third h1")[0]
-	name = name_selector.text unless name_selector.nil?
+	name = name_selector.nil? ? "s" : name_selector.text
 
 	tagline_selector = student_page.css("h2#tagline")[0]
-	tagline = tagline_selector.text unless tagline_selector.nil?
+	tagline = name_selector.nil? ? "s" : tagline_selector.text
 
 	description_selector = student_page.css("div.two_third p:first")[0]
-	description = description_selector.text unless description_selector.nil?
+	description = description_selector.nil? ? "s" : description_selector.text
+
+	puts name
+	puts tagline
+	puts description
+	
+	# insert student
+	insert_student(name, tagline, description)
+	students_id = find_id(name)
 
 	# photo is in CSS, can we get this?
 	# image_selector = student_page.css("div#navcontainer img")[0]
@@ -35,11 +64,18 @@ links.each do |link|
 
 	twitter_selector = student_page.css("li.twitter a")[0]
 	twitter = twitter_selector["href"] unless twitter_selector.nil?
-		
+	
+	# insert social links
+	insert_social(students_id, "email", email)
+	insert_social(students_id, "blog", blog)
+	insert_social(students_id, "linkedin", linkedin)
+	insert_social(students_id, "twitter", twitter)
+
 	coder_links = student_page.css(".coder-cred a")
 	coder_links.each do |code_link|
-		code_link["href"]
-		code_link.css("div")[0]["class"].gsub("cred-", "")
+		link = code_link["href"]
+		code_name = code_link.css("div")[0]["class"].gsub("cred-", "")
+		insert_social(students_id, code_name, link )
 	end
 
 	apps_selector = student_page.css("div.two_third div.one_third")
@@ -53,47 +89,3 @@ end
 # puts index_page.class   # => Nokogiri::HTML::Document
 
 
-
-# # Open a database
-# db = SQLite3::Database.new "test.db"
-
-# # Create a database
-# rows = db.execute <<-SQL
-#   create table numbers (
-#     name varchar(30),
-#     val int
-#   );
-# SQL
-
-# # Execute a few inserts
-# {
-#   "one" => 1,
-#   "two" => 2,
-# }.each do |pair|
-#   db.execute "insert into numbers values ( ?, ? )", pair
-# end
-
-# # Find a few rows
-# db.execute( "select * from numbers" ) do |row|
-#   p row
-# end
-
-#identify data that we can scrape
-
-# title
-# tagline
-# description
-# photo
-# links:
-# 	mail
-# 	blog
-# 	linkedin
-# 	twitter
-# favorite apps:
-# 	name
-# 	description
-# coder cred:
-# 	name
-# 	link
-# social nerdery
-# 	do we need this stuff?
