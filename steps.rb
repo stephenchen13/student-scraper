@@ -43,7 +43,7 @@ end
 
 # open index to get all profile links
 index_page = Nokogiri::HTML(open("http://students.flatironschool.com/"))   
-links = index_page.css("div.one_third a").map { |link| link["href"] }
+links = index_page.css("div.one_third a:first").map { |link| link["href"] }
 # billy's profile doesnt match
 links.delete("billymizrahi.html")
 
